@@ -1,11 +1,11 @@
 {
-  "name": "MSMS - Family Financial Tracker",
-  "short_name": "MSMS",
+  "name": "FamFinTrack",
+  "short_name": "FamFinTrack",
   "description": "Aplikasi Keuangan Internal Keluarga M. Surur",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f8f9fa",
-  "theme_color": "#6c5ce7",
+  "theme_color": "#2ecc71",
   "orientation": "portrait",
   "icons": [
     {

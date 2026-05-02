@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Generate PWA Icons</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 0 16px;
+      text-align: center;
+    }
+    button {
+      background: #6c5ce7;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px;
+    }
+    canvas {
+      display: none;
+    }
+    .hint {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Generate PWA Icons</h2>
+  <p>Klik tombol di bawah untuk download icon PNG yang valid.</p>
+  <div>
+    <button onclick="downloadIcon(192)">Download icon-192.png</button>
+    <button onclick="downloadIcon(512)">Download icon-512.png</button>
+  </div>
+  <p class="hint">
+    Setelah download, pindahkan file ke folder project ini (ganti file yang lama),<br>
+    lalu commit & push ke GitHub.
+  </p>
+  <canvas id="c"></canvas>
+
+  <script>
+    const svgSource = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#6c5ce7"/>
+  <text x="50" y="65" font-family="Arial, sans-serif" font-size="45" font-weight="bold" fill="white" text-anchor="middle">M</text>
+</svg>`;
+
+    function downloadIcon(size) {
+      const canvas = document.getElementById('c');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      const img = new Image();
+      const svgBlob = new Blob([svgSource], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob((blob) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `icon-${size}.png`;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }, 'image/png');
+      };
+      img.src = url;
+    }
+  </script>
+</body>
+</html>

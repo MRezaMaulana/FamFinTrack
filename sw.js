@@ -1,8 +1,12 @@
-const CACHE_NAME = 'msms-v1';
+const CACHE_NAME = 'famfintrack-v1';
 const STATIC_ASSETS = [
   './',
-  './MSMSv6.html',
-  './manifest.json'
+  './index.html',
+  './manifest.json',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './favicon.ico'
 ];
 
 // Install: cache shell
