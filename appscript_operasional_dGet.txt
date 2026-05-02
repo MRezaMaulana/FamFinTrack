@@ -1,0 +1,25 @@
+function doGet(e) {
+  e = e || { parameter: {} };
+  const mode = e.parameter.mode || 'filter';
+  const startParam = e.parameter.start; // "YYYY-MM-DD"
+  const endParam = e.parameter.end;     // "YYYY-MM-DD"
+
+  let data = getAllData();
+
+  // Format timestamp menjadi Date object
+  data = data.map(item => {
+    item.dateObj = new Date(item.timestamp); // tambahan untuk filter
+    return item;
+  });
+
+  // --- SEMUA KODE FILTER ANDA DI SINI (jangan dihapus) ---
+  // ... kode filter mode 'latest', 'all', 'filter' ...
+  // ... kode tanggal start/end ...
+
+
+  // ============================================================
+  // INI SAJA YANG DIGANTI — PASTRIKAN INI BARIS PALING BAWAH
+  // ============================================================
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}

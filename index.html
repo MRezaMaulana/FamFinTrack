@@ -253,7 +253,7 @@
             </div>
             <div class="col-6">
               <div class="card list-card p-2 text-center">
-                <small class="text-muted">Bulan Lalu(Keluar)</small>
+                <small class="text-muted">Bulan Lalu (Keluar)</small>
                 <h6 class="mb-0 text-danger" id="summary-keluar-lalu">Rp 0</h6>
               </div>
             </div>
@@ -342,6 +342,7 @@
       const summaryKeluarIni = document.getElementById('summary-keluar-ini');
       let currentDashboardCategory = '';
       let currentLogCategory = '';
+      let cachedDashboardData = null;
 
 
       // Menu Pendidikan
@@ -362,17 +363,38 @@
         menuPage.classList.add('d-none');
         latestPage.classList.remove('d-none');
         currentLogCategory = 'operasional';
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        filterEnd.value = today.toISOString().split('T')[0];
+        filterStart.value = sevenDaysAgo.toISOString().split('T')[0];
         latestList.innerHTML = '<p class="text-center text-muted mt-4">Silakan pilih filter tanggal terlebih dahulu, lalu klik Cari.</p>';
       });
       btnBack.addEventListener('click', () => { latestPage.classList.add('d-none'); menuPage.classList.remove('d-none'); });
+
       btnDashboard.addEventListener('click', () => {
         menuPage.classList.add('d-none');
         dashboardPage.classList.remove('d-none');
         currentDashboardCategory = 'operasional';
         trendContainer.classList.add('d-none');
+        summaryContainer.classList.add('d-none');
+        if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+        cachedDashboardData = null;
+        totalMasukEl.innerText = 'Memuat...';
+        totalKeluarEl.innerText = 'Memuat...';
+        saldoEl.innerText = 'Memuat...';
+        summaryMasukLalu.innerText = '...';
+        summaryKeluarLalu.innerText = '...';
+        summaryMasukIni.innerText = '...';
+        summaryKeluarIni.innerText = '...';
         loadDashboardOperasional();
       });
-      btnBackDashboard.addEventListener('click', () => { dashboardPage.classList.add('d-none'); menuPage.classList.remove('d-none'); });
+      btnBackDashboard.addEventListener('click', () => {
+        dashboardPage.classList.add('d-none');
+        menuPage.classList.remove('d-none');
+        trendContainer.classList.add('d-none');
+        if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+      });
 
       btnSearch.addEventListener('click', () => {
         const startDate = new Date(filterStart.value);
@@ -427,6 +449,11 @@
         menuPage.classList.add('d-none');
         latestPage.classList.remove('d-none');
         currentLogCategory = 'pendidikan';
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        filterEnd.value = today.toISOString().split('T')[0];
+        filterStart.value = sevenDaysAgo.toISOString().split('T')[0];
         latestList.innerHTML = '<p class="text-center text-muted mt-4">Silakan pilih filter tanggal terlebih dahulu, lalu klik Cari.</p>';
       });
       btnDashboardPendidikan.addEventListener('click', () => {
@@ -434,6 +461,16 @@
         dashboardPage.classList.remove('d-none');
         currentDashboardCategory = 'pendidikan';
         trendContainer.classList.add('d-none');
+        summaryContainer.classList.add('d-none');
+        if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+        cachedDashboardData = null;
+        totalMasukEl.innerText = 'Memuat...';
+        totalKeluarEl.innerText = 'Memuat...';
+        saldoEl.innerText = 'Memuat...';
+        summaryMasukLalu.innerText = '...';
+        summaryKeluarLalu.innerText = '...';
+        summaryMasukIni.innerText = '...';
+        summaryKeluarIni.innerText = '...';
         loadDashboardPendidikan();
       });
 
@@ -444,6 +481,11 @@
         menuPage.classList.add('d-none');
         latestPage.classList.remove('d-none');
         currentLogCategory = 'berobat';
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        filterEnd.value = today.toISOString().split('T')[0];
+        filterStart.value = sevenDaysAgo.toISOString().split('T')[0];
         latestList.innerHTML = '<p class="text-center text-muted mt-4">Silakan pilih filter tanggal terlebih dahulu, lalu klik Cari.</p>';
       });
       btnDashboardBerobatMama.addEventListener('click', () => {
@@ -451,6 +493,16 @@
         dashboardPage.classList.remove('d-none');
         currentDashboardCategory = 'berobat';
         trendContainer.classList.add('d-none');
+        summaryContainer.classList.add('d-none');
+        if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+        cachedDashboardData = null;
+        totalMasukEl.innerText = 'Memuat...';
+        totalKeluarEl.innerText = 'Memuat...';
+        saldoEl.innerText = 'Memuat...';
+        summaryMasukLalu.innerText = '...';
+        summaryKeluarLalu.innerText = '...';
+        summaryMasukIni.innerText = '...';
+        summaryKeluarIni.innerText = '...';
         loadDashboardBerobatMama();
       });
 
@@ -486,7 +538,14 @@
           .catch(err => { latestList.innerHTML = '<div class="text-danger">Gagal memuat data</div>'; console.error(err); });
       }*/
 
-      // --- New Load Data Operasional --- 
+      // Helper function: normalize date to start of day (local timezone)
+      function normalizeDate(date) {
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return null;
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      }
+
+      // --- New Load Data Operasional ---
       function loadLatestOperasional(startDate = null, endDate = null) {
         latestList.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted mb-0">Memuat data...</p></div>';
         const URL = 'https://script.google.com/macros/s/AKfycbwI22hYcjstYAMezz4mICUOcv9Y3ppovAdvJDDdvPkEni1tagxGlivm7-CfBDsmikZa/exec?mode=filter';
@@ -501,9 +560,12 @@
 
             // Filter data berdasarkan range tanggal jika ada
             if (startDate && endDate) {
+              const normStart = normalizeDate(startDate);
+              const normEnd = normalizeDate(endDate);
               data = data.filter(item => {
-                const itemDate = new Date(item.timestamp);
-                return itemDate >= startDate && itemDate <= endDate;
+                const itemDate = normalizeDate(item.timestamp);
+                if (!itemDate) return false;
+                return itemDate >= normStart && itemDate <= normEnd;
               });
             }
 
@@ -514,7 +576,7 @@
 
             data.forEach(item => {
               const tanggal = new Date(item.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-              const isKeluar = item.keterangan.toLowerCase() === 'keluar'; // ganti ke item.tipe jika API terbaru
+              const isKeluar = (item.keterangan || '').toLowerCase() === 'keluar'; // ganti ke item.tipe jika API terbaru
               const warnaNominal = isKeluar ? 'text-danger' : 'text-dark';
               const badgeTipe = isKeluar ? '<span class="badge bg-danger-subtle text-danger">Keluar</span>' : '<span class="badge bg-success-subtle text-success">Masuk</span>';
               latestList.innerHTML += `
@@ -545,10 +607,11 @@
         fetch(URL)
           .then(res => res.json())
           .then(data => {
+            cachedDashboardData = data; // simpan data asli ke cache
             let totalMasuk = 0, totalKeluar = 0;
             data.forEach(item => {
               const nominal = Number(item.nominal || 0);
-              const tipe = item.keterangan.toLowerCase();
+              const tipe = (item.keterangan || '').toLowerCase();
               if (tipe === 'masuk') totalMasuk += nominal;
               if (tipe === 'keluar') totalKeluar += nominal;
             });
@@ -556,6 +619,7 @@
             totalMasukEl.innerText = 'Rp ' + totalMasuk.toLocaleString('id-ID');
             totalKeluarEl.innerText = 'Rp ' + totalKeluar.toLocaleString('id-ID');
             saldoEl.innerText = 'Rp ' + saldo.toLocaleString('id-ID');
+            computeSummary(data);
           })
           .catch(err => { console.error(err); alert('Gagal memuat dashboard'); });
       }
@@ -571,9 +635,12 @@
             if (!data || data.length === 0) { latestList.innerHTML = '<p class="text-muted">Belum ada data</p>'; return; }
 
             if (startDate && endDate) {
+              const normStart = normalizeDate(startDate);
+              const normEnd = normalizeDate(endDate);
               data = data.filter(item => {
-                const itemDate = new Date(item.timestamp);
-                return itemDate >= startDate && itemDate <= endDate;
+                const itemDate = normalizeDate(item.timestamp);
+                if (!itemDate) return false;
+                return itemDate >= normStart && itemDate <= normEnd;
               });
             }
 
@@ -584,7 +651,7 @@
 
             data.forEach(item => {
               const tanggal = new Date(item.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-              const isKeluar = item.tipe.toLowerCase() === 'keluar';
+              const isKeluar = (item.tipe || '').toLowerCase() === 'keluar';
               const warnaNominal = isKeluar ? 'text-danger' : 'text-dark';
               const badgeTipe = isKeluar ? '<span class="badge bg-danger-subtle text-danger">Keluar</span>' : '<span class="badge bg-success-subtle text-success">Masuk</span>';
               latestList.innerHTML += `
@@ -612,10 +679,11 @@
         fetch(URL)
           .then(res => res.json())
           .then(data => {
+            cachedDashboardData = data; // simpan data asli ke cache
             let totalMasuk = 0, totalKeluar = 0;
             data.forEach(item => {
               const nominal = Number(item.nominal || 0);
-              const tipe = item.tipe.toLowerCase();
+              const tipe = (item.tipe || '').toLowerCase();
               if (tipe === 'masuk') totalMasuk += nominal;
               if (tipe === 'keluar') totalKeluar += nominal;
             });
@@ -623,6 +691,7 @@
             totalMasukEl.innerText = 'Rp ' + totalMasuk.toLocaleString('id-ID');
             totalKeluarEl.innerText = 'Rp ' + totalKeluar.toLocaleString('id-ID');
             saldoEl.innerText = 'Rp ' + saldo.toLocaleString('id-ID');
+            computeSummary(data);
           })
           .catch(err => { console.error(err); alert('Gagal memuat dashboard pendidikan'); });
       }
@@ -638,9 +707,12 @@
             if (!data || data.length === 0) { latestList.innerHTML = '<p class="text-muted">Belum ada data</p>'; return; }
 
             if (startDate && endDate) {
+              const normStart = normalizeDate(startDate);
+              const normEnd = normalizeDate(endDate);
               data = data.filter(item => {
-                const itemDate = new Date(item.timestamp);
-                return itemDate >= startDate && itemDate <= endDate;
+                const itemDate = normalizeDate(item.timestamp);
+                if (!itemDate) return false;
+                return itemDate >= normStart && itemDate <= normEnd;
               });
             }
 
@@ -651,7 +723,7 @@
 
             data.forEach(item => {
               const tanggal = new Date(item.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-              const isKeluar = item.tipe.toLowerCase() === 'keluar';
+              const isKeluar = (item.tipe || '').toLowerCase() === 'keluar';
               const warnaNominal = isKeluar ? 'text-danger' : 'text-dark';
               const badgeTipe = isKeluar ? '<span class="badge bg-danger-subtle text-danger">Keluar</span>' : '<span class="badge bg-success-subtle text-success">Masuk</span>';
               latestList.innerHTML += `
@@ -679,10 +751,11 @@
         fetch(URL)
           .then(res => res.json())
           .then(data => {
+            cachedDashboardData = data; // simpan data asli ke cache
             let totalMasuk = 0, totalKeluar = 0;
             data.forEach(item => {
               const nominal = Number(item.nominal || 0);
-              const tipe = item.tipe.toLowerCase();
+              const tipe = (item.tipe || '').toLowerCase();
               if (tipe === 'masuk') totalMasuk += nominal;
               if (tipe === 'keluar') totalKeluar += nominal;
             });
@@ -690,14 +763,58 @@
             totalMasukEl.innerText = 'Rp ' + totalMasuk.toLocaleString('id-ID');
             totalKeluarEl.innerText = 'Rp ' + totalKeluar.toLocaleString('id-ID');
             saldoEl.innerText = 'Rp ' + saldo.toLocaleString('id-ID');
+            computeSummary(data);
           })
           .catch(err => { console.error(err); alert('Gagal memuat dashboard berobat mama'); });
       }
 
       // --- Logic untuk Summary Bulanan ---
+      function computeSummary(data) {
+        const now = new Date();
+        let lastMonth = now.getMonth() - 1;
+        let lastYear = now.getFullYear();
+        if (lastMonth < 0) {
+          lastMonth = 11;
+          lastYear -= 1;
+        }
+        let currentMonth = now.getMonth();
+        let currentYear = now.getFullYear();
+
+        let masukLast = 0, keluarLast = 0, masukCurrent = 0, keluarCurrent = 0;
+
+        data.forEach(item => {
+          const itemDate = normalizeDate(item.timestamp);
+          if (!itemDate) return;
+          const nominal = Number(item.nominal || 0);
+          const tipe = (item.tipe || item.keterangan || '').toLowerCase();
+
+          const isLastMonth = itemDate.getMonth() === lastMonth && itemDate.getFullYear() === lastYear;
+          const isCurrentMonth = itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+
+          if (isLastMonth) {
+            if (tipe === 'masuk') masukLast += nominal;
+            if (tipe === 'keluar') keluarLast += nominal;
+          }
+          if (isCurrentMonth) {
+            if (tipe === 'masuk') masukCurrent += nominal;
+            if (tipe === 'keluar') keluarCurrent += nominal;
+          }
+        });
+
+        summaryMasukLalu.innerText = 'Rp ' + masukLast.toLocaleString('id-ID');
+        summaryKeluarLalu.innerText = 'Rp ' + keluarLast.toLocaleString('id-ID');
+        summaryMasukIni.innerText = 'Rp ' + masukCurrent.toLocaleString('id-ID');
+        summaryKeluarIni.innerText = 'Rp ' + keluarCurrent.toLocaleString('id-ID');
+      }
+
       btnViewSummary.addEventListener('click', () => {
         summaryContainer.classList.toggle('d-none');
         if (summaryContainer.classList.contains('d-none')) return;
+
+        if (cachedDashboardData) {
+          computeSummary(cachedDashboardData);
+          return;
+        }
 
         let URL = '';
         if (currentDashboardCategory === 'operasional') {
@@ -713,49 +830,197 @@
         fetch(URL)
           .then(res => res.json())
           .then(data => {
-            const now = new Date();
-            let lastMonth = now.getMonth() - 1;
-            let lastYear = now.getFullYear();
-            if (lastMonth < 0) {
-              lastMonth = 11;
-              lastYear -= 1;
-            }
-            let currentMonth = now.getMonth();
-            let currentYear = now.getFullYear();
-
-            let masukLast = 0, keluarLast = 0, masukCurrent = 0, keluarCurrent = 0;
-
-            data.forEach(item => {
-              const itemDate = new Date(item.timestamp);
-              const nominal = Number(item.nominal || 0);
-              const tipe = (item.tipe || item.keterangan || '').toLowerCase();
-
-              const isLastMonth = itemDate.getMonth() === lastMonth && itemDate.getFullYear() === lastYear;
-              const isCurrentMonth = itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
-
-              if (isLastMonth) {
-                if (tipe === 'masuk') masukLast += nominal;
-                if (tipe === 'keluar') keluarLast += nominal;
-              }
-              if (isCurrentMonth) {
-                if (tipe === 'masuk') masukCurrent += nominal;
-                if (tipe === 'keluar') keluarCurrent += nominal;
-              }
-            });
-
-            summaryMasukLalu.innerText = 'Rp ' + masukLast.toLocaleString('id-ID');
-            summaryKeluarLalu.innerText = 'Rp ' + keluarLast.toLocaleString('id-ID');
-            summaryMasukIni.innerText = 'Rp ' + masukCurrent.toLocaleString('id-ID');
-            summaryKeluarIni.innerText = 'Rp ' + keluarCurrent.toLocaleString('id-ID');
+            cachedDashboardData = data;
+            computeSummary(data);
           })
           .catch(err => { console.error(err); alert('Gagal memuat summary bulanan'); });
       });
 
       // --- Logic untuk Trend Chart ---
+      function renderTrendChart(data) {
+        trendLoading.classList.add('d-none');
+        trendChartCanvas.classList.remove('d-none');
+
+        const now = new Date();
+
+        // Bulan lalu
+        let lastMonth = now.getMonth() - 1;
+        let lastYear = now.getFullYear();
+        if (lastMonth < 0) {
+          lastMonth = 11;
+          lastYear -= 1;
+        }
+
+        // Bulan ini
+        let currentMonth = now.getMonth();
+        let currentYear = now.getFullYear();
+
+        const dailyTotalsLast = {};
+        const dailyTotalsCurrent = {};
+        const dailyKeteranganLast = {};
+        const dailyKeteranganCurrent = {};
+
+        // Buat tanggal 1 sampai 31 untuk x-axis (fix semua tanggal ditampilkan)
+        for (let i = 1; i <= 31; i++) {
+          dailyTotalsLast[i] = 0;
+          dailyTotalsCurrent[i] = 0;
+          dailyKeteranganLast[i] = [];
+          dailyKeteranganCurrent[i] = [];
+        }
+
+        data.forEach(item => {
+          const itemDate = normalizeDate(item.timestamp);
+          if (!itemDate) return;
+          const type = (item.tipe || item.keterangan || '').toLowerCase();
+
+          if (type === 'keluar') {
+            const day = itemDate.getDate();
+            const nominal = Number(item.nominal || 0);
+            const keterangan = item.kategori || item.keterangan || item.catatan || '-';
+
+            // Bulan lalu
+            if (itemDate.getMonth() === lastMonth && itemDate.getFullYear() === lastYear) {
+              dailyTotalsLast[day] += nominal;
+              dailyKeteranganLast[day].push(keterangan);
+            }
+
+            // Bulan ini
+            if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
+              dailyTotalsCurrent[day] += nominal;
+              dailyKeteranganCurrent[day].push(keterangan);
+            }
+          }
+        });
+
+        const labels = Object.keys(dailyTotalsLast);
+        const chartDataLast = Object.values(dailyTotalsLast);
+        const chartDataCurrent = Object.values(dailyTotalsCurrent);
+        const keteranganDataLast = Object.values(dailyKeteranganLast);
+        const keteranganDataCurrent = Object.values(dailyKeteranganCurrent);
+
+        if (trendChartInstance) {
+          trendChartInstance.destroy();
+        }
+
+        const ctx = trendChartCanvas.getContext('2d');
+        trendChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Bulan Lalu',
+                data: chartDataLast,
+                keterangan: keteranganDataLast,
+                borderColor: '#6c5ce7',
+                backgroundColor: 'rgba(108, 92, 231, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#6c5ce7',
+                pointRadius: 2,
+                pointHoverRadius: 5
+              },
+              {
+                label: 'Bulan Ini',
+                data: chartDataCurrent,
+                keterangan: keteranganDataCurrent,
+                borderColor: '#00b894',
+                backgroundColor: 'rgba(0, 184, 148, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#00b894',
+                pointRadius: 2,
+                pointHoverRadius: 5
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: {
+                left: 4,
+                right: 12,
+                top: 4,
+                bottom: 8
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              },
+              tooltip: {
+                callbacks: {
+                  title: function (context) {
+                    const day = context[0].label;
+                    const month = context[0].dataset.label === 'Bulan Lalu' ? lastMonth : currentMonth;
+                    const year = context[0].dataset.label === 'Bulan Lalu' ? lastYear : currentYear;
+                    const date = new Date(year, month, day);
+                    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  },
+                  label: function (context) {
+                    const nominal = context.parsed.x;
+                    const keteranganArray = context.dataset.keterangan[context.dataIndex];
+                    const keteranganText = keteranganArray.length > 0 ? keteranganArray.join(', ') : '-';
+                    return [
+                      'Nominal: Rp ' + nominal.toLocaleString('id-ID'),
+                      'Keterangan: ' + keteranganText
+                    ];
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    if (value >= 1000000) {
+                      const jt = value / 1000000;
+                      return Number.isInteger(jt) ? jt + 'jt' : jt.toFixed(1).replace('.0', '') + 'jt';
+                    }
+                    if (value >= 1000) {
+                      return (value / 1000) + 'k';
+                    }
+                    return value;
+                  },
+                  font: {
+                    size: 11
+                  }
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)'
+                }
+              },
+              y: {
+                ticks: {
+                  autoSkip: false,
+                  font: {
+                    size: 11
+                  }
+                },
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+      }
+
       btnViewTrend.addEventListener('click', () => {
         trendContainer.classList.remove('d-none');
         trendLoading.classList.remove('d-none');
         trendChartCanvas.classList.add('d-none');
+
+        if (cachedDashboardData) {
+          renderTrendChart(cachedDashboardData);
+          return;
+        }
 
         let URL = '';
         if (currentDashboardCategory === 'operasional') {
@@ -766,194 +1031,20 @@
           URL = 'https://script.google.com/macros/s/AKfycbxEhHVcHUd7n9Mo9i2-tqlSSXzKyKAnekQtMPHFSv1ITUOktR7HFhOm_RMfBoa-ICap/exec?mode=all';
         }
 
-        if (URL) {
-          loadTrendChart(URL);
-        }
-      });
+        if (!URL) return;
 
-      function loadTrendChart(URL) {
         fetch(URL)
           .then(res => res.json())
           .then(data => {
-            trendLoading.classList.add('d-none');
-            trendChartCanvas.classList.remove('d-none');
-
-            const now = new Date();
-
-            // Bulan lalu
-            let lastMonth = now.getMonth() - 1;
-            let lastYear = now.getFullYear();
-            if (lastMonth < 0) {
-              lastMonth = 11;
-              lastYear -= 1;
-            }
-
-            // Bulan ini
-            let currentMonth = now.getMonth();
-            let currentYear = now.getFullYear();
-
-            const dailyTotalsLast = {};
-            const dailyTotalsCurrent = {};
-            const dailyKeteranganLast = {};
-            const dailyKeteranganCurrent = {};
-
-            // Buat tanggal 1 sampai 31 untuk x-axis (fix semua tanggal ditampilkan)
-            for (let i = 1; i <= 31; i++) {
-              dailyTotalsLast[i] = 0;
-              dailyTotalsCurrent[i] = 0;
-              dailyKeteranganLast[i] = [];
-              dailyKeteranganCurrent[i] = [];
-            }
-
-            data.forEach(item => {
-              const itemDate = new Date(item.timestamp);
-              const type = (item.keterangan || item.tipe || '').toLowerCase();
-
-              if (type === 'keluar') {
-                const day = itemDate.getDate();
-                const nominal = Number(item.nominal || 0);
-                const keterangan = item.kategori || item.keterangan || item.catatan || '-';
-
-                // Bulan lalu
-                if (itemDate.getMonth() === lastMonth && itemDate.getFullYear() === lastYear) {
-                  dailyTotalsLast[day] += nominal;
-                  dailyKeteranganLast[day].push(keterangan);
-                }
-
-                // Bulan ini
-                if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
-                  dailyTotalsCurrent[day] += nominal;
-                  dailyKeteranganCurrent[day].push(keterangan);
-                }
-              }
-            });
-
-            const labels = Object.keys(dailyTotalsLast);
-            const chartDataLast = Object.values(dailyTotalsLast);
-            const chartDataCurrent = Object.values(dailyTotalsCurrent);
-            const keteranganDataLast = Object.values(dailyKeteranganLast);
-            const keteranganDataCurrent = Object.values(dailyKeteranganCurrent);
-
-            if (trendChartInstance) {
-              trendChartInstance.destroy();
-            }
-
-            const ctx = trendChartCanvas.getContext('2d');
-            trendChartInstance = new Chart(ctx, {
-              type: 'line',
-              data: {
-                labels: labels,
-                datasets: [
-                  {
-                    label: 'Bulan Lalu',
-                    data: chartDataLast,
-                    keterangan: keteranganDataLast,
-                    borderColor: '#6c5ce7',
-                    backgroundColor: 'rgba(108, 92, 231, 0.2)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.3,
-                    pointBackgroundColor: '#6c5ce7',
-                    pointRadius: 2,
-                    pointHoverRadius: 5
-                  },
-                  {
-                    label: 'Bulan Ini',
-                    data: chartDataCurrent,
-                    keterangan: keteranganDataCurrent,
-                    borderColor: '#00b894',
-                    backgroundColor: 'rgba(0, 184, 148, 0.2)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.3,
-                    pointBackgroundColor: '#00b894',
-                    pointRadius: 2,
-                    pointHoverRadius: 5
-                  }
-                ]
-              },
-              options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                  padding: {
-                    left: 4,
-                    right: 12,
-                    top: 4,
-                    bottom: 8
-                  }
-                },
-                plugins: {
-                  legend: {
-                    display: true,
-                    position: 'top'
-                  },
-                  tooltip: {
-                    callbacks: {
-                      title: function (context) {
-                        const day = context[0].label;
-                        const month = context[0].dataset.label === 'Bulan Lalu' ? lastMonth : currentMonth;
-                        const year = context[0].dataset.label === 'Bulan Lalu' ? lastYear : currentYear;
-                        const date = new Date(year, month, day);
-                        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                      },
-                      label: function (context) {
-                        const nominal = context.parsed.x;
-                        const keteranganArray = context.dataset.keterangan[context.dataIndex];
-                        const keteranganText = keteranganArray.length > 0 ? keteranganArray.join(', ') : '-';
-                        return [
-                          'Nominal: Rp ' + nominal.toLocaleString('id-ID'),
-                          'Keterangan: ' + keteranganText
-                        ];
-                      }
-                    }
-                  }
-                },
-                scales: {
-                  x: {
-                    beginAtZero: true,
-                    ticks: {
-                      callback: function (value) {
-                        if (value >= 1000000) {
-                          const jt = value / 1000000;
-                          return Number.isInteger(jt) ? jt + 'jt' : jt.toFixed(1).replace('.0', '') + 'jt';
-                        }
-                        if (value >= 1000) {
-                          return (value / 1000) + 'k';
-                        }
-                        return value;
-                      },
-                      font: {
-                        size: 11
-                      }
-                    },
-                    grid: {
-                      color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                  },
-                  y: {
-                    ticks: {
-                      autoSkip: false,
-                      font: {
-                        size: 11
-                      }
-                    },
-                    grid: {
-                      display: false
-                    }
-                  }
-                }
-              }
-            });
-
+            cachedDashboardData = data;
+            renderTrendChart(data);
           })
           .catch(err => {
             console.error(err);
             trendLoading.classList.add('d-none');
             alert('Gagal memuat grafik tren');
           });
-      }
+      });
 
     });
   </script>
